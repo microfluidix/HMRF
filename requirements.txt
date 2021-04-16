@@ -4,9 +4,4 @@ networkx
 pytest
 tqdm
 pandas
-click
-cellpose
-glob3
-black
 sklearn
-tqdm

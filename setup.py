@@ -18,7 +18,6 @@ setup(
         "tqdm",
         "pandas",
         "pip",
-        "mkl",
         "scikit-image",
         "matplotlib",
         "black",
