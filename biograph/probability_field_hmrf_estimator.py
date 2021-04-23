@@ -75,31 +75,31 @@ class hmrf():
         
         for k in range(self.number_of_cell_types):
             
-            latent_probability_vector[k] = gamma*local_probability_vector[k] + np.sum([neighbor_probability_vector[k] for neighbor_probability_vector in neighbor_latent_probability_field])
+            latent_probability_vector[k] = self.gamma*local_probability_vector[k] + np.sum([neighbor_probability_vector[k] for neighbor_probability_vector in neighbor_latent_probability_field])
             
         latent_probability_vector /= np.sum(latent_probability_vector)
         
         return latent_probability_vector
 
-def update_latent_probability_field(self):
-    
-    latent_probability_field_dict = nx.get_node_attributes(self.graph, 'latent_probability_field')
-    cell_type_dict = nx.get_node_attributes(self.graph, 'cell_type')
+    def update_latent_probability_field(self):
+        
+        latent_probability_field_dict = nx.get_node_attributes(self.graph, 'latent_probability_field')
+        cell_type_dict = nx.get_node_attributes(self.graph, 'cell_type')
 
-    G = self.graph
-    
-    for node in self.graph.nodes:
-                
-        local_probability_vector =  np.zeros(number_of_cell_types)
-        local_probability_vector[cell_type_dict[node]] = 1
+        G = self.graph
         
-        neighbor_latent_probability_field = [latent_probability_field_dict[n] for n in G.neighbors(node)]
-        
-        
-        latent_probability_vector = self.calculate_latent_probability_vector(local_probability_vector,
-                                                                        neighbor_latent_probability_field)
-                
-        nx.set_node_attributes(G, {node:latent_probability_vector}, 'latent_probability_field')
-        
-    self.graph = G
+        for node in self.graph.nodes:
+                    
+            local_probability_vector =  np.zeros(self.number_of_cell_types)
+            local_probability_vector[cell_type_dict[node]] = 1
+            
+            neighbor_latent_probability_field = [latent_probability_field_dict[n] for n in G.neighbors(node)]
+            
+            
+            latent_probability_vector = self.calculate_latent_probability_vector(local_probability_vector,
+                                                                            neighbor_latent_probability_field)
+                    
+            nx.set_node_attributes(G, {node:latent_probability_vector}, 'latent_probability_field')
+            
+        self.graph = G
             
