@@ -11,17 +11,14 @@ setup(
     url="",
     install_requires=[
         "numpy",
-        "tifffile",
         "scipy",
         "networkx",
         "pytest",
         "tqdm",
         "pandas",
         "pip",
-        "mkl",
         "scikit-image",
         "matplotlib",
-        "black",
         "sklearn"
     ],
     packages = ['biograph', 
