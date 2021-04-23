@@ -1,11 +1,8 @@
 import networkx as nx
 import numpy as np
-import tqdm
+from tqdm import tqdm
 
-class hmrf(self.graph,
-           K = 3,
-           gamma = 5,
-           epochs = 50):
+class hmrf():
 
     """
 
@@ -15,13 +12,15 @@ class hmrf(self.graph,
      - self.graph: networkx object containing 
     """
 
-    def __init__(self):
+    def __init__(self,
+                 G,
+                 gamma = 5,
+                 epochs = 50):
 
-        self.graph = self.graph
+        self.graph = G
         self.epochs = epochs
-        self.K = K
         self.gamma = gamma
-        self.node_attributes = np.unique(np.array([list(self.graph.node[n].keys()) for n in self.graph.nodes()]).flatten())
+        self.node_attributes = np.unique(np.array([list(self.graph.nodes[n].keys()) for n in self.graph.nodes()]).flatten())
 
 
     def initiate_latent_cell_type(self):
@@ -83,7 +82,7 @@ class hmrf(self.graph,
             cell_type_possibilities = list(np.unique(latent_cell_type_props))
             cell_type_possibilities.append(cell_type)
             
-            energies = [energy(cell_type, new_lat, latent_cell_type_props) for new_lat in cell_type_possibilities]
+            energies = [self.energy(cell_type, new_lat, latent_cell_type_props) for new_lat in cell_type_possibilities]
             
             cell_type_z_t = cell_type_possibilities[np.argmax(energies)]
                     
