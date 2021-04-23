@@ -1,6 +1,0 @@
-version: '3'
-services:
-  graphs-on-chip:
-    build: .
-    volumes:
-      - .
