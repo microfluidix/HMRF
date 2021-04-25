@@ -1,7 +1,10 @@
 import networkx as nx
 import numpy as np
 from tqdm import tqdm
-
+from sklearn.cluster import KMeans
+from sklearn import preprocessing
+import matplotlib.pyplot as plt
+import pandas
 from collections import Counter
 
 class hmrf():
@@ -34,6 +37,10 @@ class hmrf():
 
         if K == None:
             self.K = self.number_of_cell_types
+        else:
+            self.K = K
+
+        self.color_list= color_list = [plt.cm.Set3(i) for i in range(self.K)]
 
 
     def initiate_latent_probability_field(self):
@@ -102,4 +109,46 @@ class hmrf():
             nx.set_node_attributes(G, {node:latent_probability_vector}, 'latent_probability_field')
             
         self.graph = G
+
+    def assign_cell_class(self, 
+                          K = None):
+
+        if K != None:
+            self.K = K
+
+        latent_probability_field_properties = get_latent_probability_field_properties(self.graph, 
+                                        self.number_of_cell_types)
+
+        n_rows, n_cols = latent_probability_field_properties.shape
+        G = self.graph
+
+        X = latent_probability_field_properties.values.reshape(-1,n_cols)
+        X = preprocessing.StandardScaler().fit_transform(X)
+
+        kmeans = KMeans(n_clusters=self.K, random_state=0).fit(X)
+
+        for node in sorted(G.nodes):
+    
+            nx.set_node_attributes(G, {node:kmeans.labels_[node]}, 'class')
+            nx.set_node_attributes(G, {node:self.color_list[kmeans.labels_[node]]}, 'color')
+            nx.set_node_attributes(G, {node:kmeans.labels_[node]}, 'legend')
+
+        self.graph = G
+        
             
+
+def get_latent_probability_field_properties(G, number_of_cell_types):
+
+    resultframe = pandas.DataFrame()
+    i = 0
+    
+    latent_probability_field = nx.get_node_attributes(G, 'latent_probability_field')
+
+    for node in sorted(G.nodes):
+                
+        for k in range(number_of_cell_types):
+            resultframe.loc[i, k] = latent_probability_field[node][k]
+            
+        i += 1
+
+    return resultframe.fillna(0)
