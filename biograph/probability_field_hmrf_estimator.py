@@ -122,7 +122,7 @@ class hmrf():
         n_rows, n_cols = latent_probability_field_properties.shape
         G = self.graph
 
-        X = latent_probability_field_properties.values.reshape(-1,n_cols)
+        X = np.log(latent_probability_field_properties).values.reshape(-1,n_cols)
         X = preprocessing.StandardScaler().fit_transform(X)
 
         kmeans = KMeans(n_clusters=self.K, random_state=0).fit(X)
