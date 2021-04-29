@@ -20,6 +20,7 @@ class hmrf():
     def __init__(self,
                  G,
                  K = None,
+                 KMeans = None,
                  gamma = 5,
                  epochs = 50):
 
@@ -40,7 +41,8 @@ class hmrf():
         else:
             self.K = K
 
-        self.color_list= color_list = [plt.cm.Set3(i) for i in range(self.K)]
+        self.color_list = [plt.cm.Set3(i) for i in range(self.K)]
+        self.KMeans = KMeans
 
 
     def initiate_latent_probability_field(self):
@@ -115,25 +117,57 @@ class hmrf():
 
         if K != None:
             self.K = K
+            
+        if self.KMeans == None:
 
-        latent_probability_field_properties = get_latent_probability_field_properties(self.graph, 
-                                        self.number_of_cell_types)
+            latent_probability_field_properties = get_latent_probability_field_properties(self.graph, 
+                                            self.number_of_cell_types)
 
-        n_rows, n_cols = latent_probability_field_properties.shape
-        G = self.graph
+            latent_probability_field_nodes = list(latent_probability_field_properties.node.values)
+            latent_probability_field_properties = latent_probability_field_properties.drop(['node'], axis = 1)
 
-        X = np.log(latent_probability_field_properties).values.reshape(-1,n_cols)
-        X = preprocessing.StandardScaler().fit_transform(X)
+            n_rows, n_cols = latent_probability_field_properties.shape
+            G = self.graph
 
-        kmeans = KMeans(n_clusters=self.K, random_state=0).fit(X)
+            X = np.log(latent_probability_field_properties).values.reshape(-1,n_cols)
+            X = preprocessing.StandardScaler().fit_transform(X)
 
-        for node in sorted(G.nodes):
-    
-            nx.set_node_attributes(G, {node:kmeans.labels_[node]}, 'class')
-            nx.set_node_attributes(G, {node:self.color_list[kmeans.labels_[node]]}, 'color')
-            nx.set_node_attributes(G, {node:kmeans.labels_[node]}, 'legend')
+            kmeans = KMeans(n_clusters=self.K, random_state=0).fit(X)
+            self.color_list = [plt.cm.Set3(i) for i in range(len(np.unique(kmeans.labels_)))]
 
-        self.graph = G
+            for node in sorted(G.nodes):
+
+                nx.set_node_attributes(G, {node:kmeans.labels_[latent_probability_field_nodes.index(node)]}, 'class')
+                nx.set_node_attributes(G, {node:self.color_list[kmeans.labels_[latent_probability_field_nodes.index(node)]]}, 'color')
+                nx.set_node_attributes(G, {node:kmeans.labels_[latent_probability_field_nodes.index(node)]}, 'legend')
+
+            self.graph = G
+            self.KMeans = kmeans
+            
+        else:
+            
+            latent_probability_field_properties = get_latent_probability_field_properties(self.graph, 
+                                            self.number_of_cell_types)
+
+            latent_probability_field_nodes = list(latent_probability_field_properties.node.values)
+            latent_probability_field_properties = latent_probability_field_properties.drop(['node'], axis = 1)
+
+            n_rows, n_cols = latent_probability_field_properties.shape
+            G = self.graph
+
+            X = np.log(latent_probability_field_properties).values.reshape(-1,n_cols)
+            X = preprocessing.StandardScaler().fit_transform(X)
+            
+            labels = self.KMeans.predict(X)
+            self.color_list = [plt.cm.Set3(i) for i in range(len(np.unique(labels)))]
+
+            for node in sorted(G.nodes):
+
+                nx.set_node_attributes(G, {node:labels[latent_probability_field_nodes.index(node)]}, 'class')
+                nx.set_node_attributes(G, {node:self.color_list[labels[latent_probability_field_nodes.index(node)]]}, 'color')
+                nx.set_node_attributes(G, {node:labels[latent_probability_field_nodes.index(node)]}, 'legend')
+
+            self.graph = G
         
             
 
@@ -145,7 +179,9 @@ def get_latent_probability_field_properties(G, number_of_cell_types):
     latent_probability_field = nx.get_node_attributes(G, 'latent_probability_field')
 
     for node in sorted(G.nodes):
-                
+        
+        resultframe.loc[i, 'node'] = node
+        
         for k in range(number_of_cell_types):
             resultframe.loc[i, k] = latent_probability_field[node][k]
             
