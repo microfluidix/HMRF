@@ -90,6 +90,7 @@ class hmrf():
         
         return latent_probability_vector
 
+
     def update_latent_probability_field(self):
         
         latent_probability_field_dict = nx.get_node_attributes(self.graph, 'latent_probability_field')
@@ -129,7 +130,9 @@ class hmrf():
             n_rows, n_cols = latent_probability_field_properties.shape
             G = self.graph
 
-            X = np.log(latent_probability_field_properties).values.reshape(-1,n_cols)
+            # add 1e-4 in case of zero values. Avoids divergence in log.
+
+            X = np.log(latent_probability_field_properties + 1e-4).values.reshape(-1,n_cols)
             X = preprocessing.StandardScaler().fit_transform(X)
 
             kmeans = KMeans(n_clusters=self.K, random_state=0).fit(X)
