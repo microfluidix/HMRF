@@ -118,58 +118,39 @@ class hmrf():
         if K != None:
             self.K = K
             
+        latent_probability_field_properties = get_latent_probability_field_properties(self.graph, 
+                                        self.number_of_cell_types)
+
+        latent_probability_field_nodes = list(latent_probability_field_properties.node.values)
+        latent_probability_field_properties = latent_probability_field_properties.drop(['node'], axis = 1)
+
+        n_rows, n_cols = latent_probability_field_properties.shape
+        G = self.graph
+
+        X = np.log(latent_probability_field_properties).values.reshape(-1,n_cols)
+        X = preprocessing.StandardScaler().fit_transform(X)
+
+        # Find cell clusters if no clusters given or attribute clusters
+        # if KMeans is already an entry
+
         if self.KMeans == None:
-
-            latent_probability_field_properties = get_latent_probability_field_properties(self.graph, 
-                                            self.number_of_cell_types)
-
-            latent_probability_field_nodes = list(latent_probability_field_properties.node.values)
-            latent_probability_field_properties = latent_probability_field_properties.drop(['node'], axis = 1)
-
-            n_rows, n_cols = latent_probability_field_properties.shape
-            G = self.graph
-
-            X = np.log(latent_probability_field_properties).values.reshape(-1,n_cols)
-            X = preprocessing.StandardScaler().fit_transform(X)
 
             kmeans = KMeans(n_clusters=self.K, random_state=0).fit(X)
             self.color_list = [plt.cm.Set3(i) for i in range(len(np.unique(kmeans.labels_)))]
-
-            for node in sorted(G.nodes):
-
-                nx.set_node_attributes(G, {node:kmeans.labels_[latent_probability_field_nodes.index(node)]}, 'class')
-                nx.set_node_attributes(G, {node:self.color_list[kmeans.labels_[latent_probability_field_nodes.index(node)]]}, 'color')
-                nx.set_node_attributes(G, {node:kmeans.labels_[latent_probability_field_nodes.index(node)]}, 'legend')
-
-            self.graph = G
             self.KMeans = kmeans
-            
+
         else:
-            
-            latent_probability_field_properties = get_latent_probability_field_properties(self.graph, 
-                                            self.number_of_cell_types)
 
-            latent_probability_field_nodes = list(latent_probability_field_properties.node.values)
-            latent_probability_field_properties = latent_probability_field_properties.drop(['node'], axis = 1)
-
-            n_rows, n_cols = latent_probability_field_properties.shape
-            G = self.graph
-
-            X = np.log(latent_probability_field_properties).values.reshape(-1,n_cols)
-            X = preprocessing.StandardScaler().fit_transform(X)
-            
             labels = self.KMeans.predict(X)
             self.color_list = [plt.cm.Set3(i) for i in range(len(np.unique(labels)))]
 
-            for node in sorted(G.nodes):
+        for node in sorted(G.nodes):
 
-                nx.set_node_attributes(G, {node:labels[latent_probability_field_nodes.index(node)]}, 'class')
-                nx.set_node_attributes(G, {node:self.color_list[labels[latent_probability_field_nodes.index(node)]]}, 'color')
-                nx.set_node_attributes(G, {node:labels[latent_probability_field_nodes.index(node)]}, 'legend')
+            nx.set_node_attributes(G, {node:labels[latent_probability_field_nodes.index(node)]}, 'class')
+            nx.set_node_attributes(G, {node:self.color_list[labels[latent_probability_field_nodes.index(node)]]}, 'color')
+            nx.set_node_attributes(G, {node:labels[latent_probability_field_nodes.index(node)]}, 'legend')
 
-            self.graph = G
-        
-            
+        self.graph = G
 
 def get_latent_probability_field_properties(G, number_of_cell_types):
 
