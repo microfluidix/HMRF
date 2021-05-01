@@ -127,7 +127,7 @@ class hmrf():
         n_rows, n_cols = latent_probability_field_properties.shape
         G = self.graph
 
-        X = np.log(latent_probability_field_properties).values.reshape(-1,n_cols)
+        X = np.log(latent_probability_field_properties+1e-4).values.reshape(-1,n_cols)
         X = preprocessing.StandardScaler().fit_transform(X)
 
         # Find cell clusters if no clusters given or attribute clusters
@@ -138,6 +138,7 @@ class hmrf():
             kmeans = KMeans(n_clusters=self.K, random_state=0).fit(X)
             self.color_list = [plt.cm.Set3(i) for i in range(len(np.unique(kmeans.labels_)))]
             self.KMeans = kmeans
+            labels = self.KMeans.labels_
 
         else:
 

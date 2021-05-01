@@ -45,6 +45,7 @@ class hmrf():
         self.number_of_cell_types = len(self.cell_types)
         self.color_list = [plt.cm.Set3(i) for i in range(self.K)]
         self.KMean = KMeans
+        self.parameters = None
         
     
     def initiate_model(self):
@@ -192,7 +193,7 @@ class hmrf():
             self.update_labels()
             self.mu, self.sigma2 = self.update_parameters()
             list_param.append([self.mu, self.sigma2])
-        return list_param
+        self.parameters = list_param
         
 def categorical_vector(G, category):
     
