@@ -33,10 +33,10 @@ def Energy_cells(G, Egg=1, Egr=1.5, Err=1):
   return E
 
 def Energy_cells_distance(G, Egg=1, Egr=1.5, Err=1):
-    """
-    From a networkx graph, return an energy calculated from coefficients, 
-    and independantly from the surface of contact
-    """
+  """
+  From a networkx graph, return an energy calculated from coefficients, 
+  and independantly from the surface of contact
+  """
     
   E=0
   colors = nx.get_node_attributes(G, 'color')
@@ -57,9 +57,9 @@ def Energy_cells_distance(G, Egg=1, Egr=1.5, Err=1):
   return E
 
 def mean_lengths(G):
-    """
-    From a networkx graph, return the average distance between cell core, depending on the color of each cells
-    """
+  """
+  From a networkx graph, return the average distance between cell core, depending on the color of each cells
+  """
   total_length = 0
   total_length_gg = 0
   total_length_rr = 0
