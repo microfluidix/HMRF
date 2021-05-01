@@ -34,3 +34,7 @@ Congratulations! You're ready to rock'n'roll. The library is now installed on yo
 ## Example
 
 A working example of the library can be accessed [here](Examples/test_hmrf_single_cell.ipynb)
+
+## Nomenclature
+
+The HMRF algorith infers the tissue structure from the observed cell distribution. The homogeneous regions in the inferred tissue are of a given **class**. Any **class** is defined by a specific mix of **cell types**. The **cell type** of a given cell is the mix of cell properties that have been recorded using the cell properties on other channels. 
