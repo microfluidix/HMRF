@@ -21,6 +21,7 @@ setup(
         "matplotlib",
         "sklearn"
     ],
+    python_requires=">=3.8",
     packages = ['biograph', 
                 'biograph.graphprops']
 )
