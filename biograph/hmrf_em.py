@@ -186,7 +186,8 @@ class hmrf():
             self.update_labels()
             self.mu, self.sigma2 = self.update_parameters()
             list_param.append([self.mu, self.sigma2])
-        return list_param
+        
+        self.list_param = list_param
         
 def categorical_vector(G, category):
     
