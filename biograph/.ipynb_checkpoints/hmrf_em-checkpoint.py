@@ -20,38 +20,35 @@ class hmrf():
 
     Parameters:
      - self.graph: networkx object containing 
-
-
-    The default legend of the returned graph is the cell class.
     """
     
     def __init__(self,
                  G,
                  K = 5,
                  beta = 1,
-                 max_it = 50,
-                 KMeans = None):
-
-        cell_types = nx.get_node_attributes(G, 'cell_type')
+                 max_it = 50):
         
         self.graph = G
         self.K = K
         self.beta = beta
         self.max_it = max_it
+
         self.mu = []
         self.sigma2 = []
+
         self.node_attributes = np.unique(np.array([list(self.graph.nodes[n].keys()) for n in self.graph.nodes()]).flatten())
+
+        assert 'cell_type' in self.node_attributes
+
+        cell_types = nx.get_node_attributes(self.graph, 'cell_type')
+
         self.cell_types = np.unique([cell_types[node] for node in cell_types.keys()])
         self.number_of_cell_types = len(self.cell_types)
+
         self.color_list = [plt.cm.Set3(i) for i in range(self.K)]
-        self.KMean = KMeans
-        self.parameters = None
         
     
     def initiate_model(self):
-
-        # Fill the latent space
-
         biograph = probability_field_hmrf_estimator.hmrf(self.graph, epochs = 1, gamma = self.beta, K = 6)
         biograph.initiate_latent_probability_field()
         
@@ -59,32 +56,30 @@ class hmrf():
         
         G = biograph.graph
         n_rows, n_cols = latent_probability_field_properties.shape
-        X = np.log(latent_probability_field_properties+1e-4).values.reshape(-1,n_cols)
+        X = latent_probability_field_properties.values.reshape(-1,n_cols)
         X = preprocessing.StandardScaler().fit_transform(X)
-
-        # We initialize the labels based on another tissue
-        if self.KMean:
-            kmeans = self.KMean.predict(X)
-        else:
-            kmeans = KMeans(n_clusters= self.K, random_state=0).fit(X)
+        
+        kmeans = KMeans(n_clusters= self.K, random_state=0).fit(X)
         
         for node in sorted(G.nodes):
             nx.set_node_attributes(G, {node:kmeans.labels_[node]}, 'class')
             nx.set_node_attributes(G, {node:self.color_list[kmeans.labels_[node]]}, 'color')
             nx.set_node_attributes(G, {node:kmeans.labels_[node]}, 'legend')
-        
-        # graph actualization & initialisation of parameters
+            
         self.graph = G
+        
+        # initialisation of parameters
         self.mu, self.sigma2 = self.update_parameters()
-
         
     def update_labels(self):
         
         # Important quantities
         cell_class_dict = nx.get_node_attributes(self.graph, 'class') # dict of cell labels
+
         cell_type_list = categorical_vector(self.graph, 'cell_type') # list of cell types
 
-        N = len(cell_type_list) # Number of cells
+        N = len(cell_type_list) # Number of cell
+
         T = len(np.unique(cell_type_list)) # Number of cell types
 
         # Create matrix from cell type
@@ -109,20 +104,18 @@ class hmrf():
         # Emission log-probability
 
         log_P_gauss = np.zeros((len(self.graph.nodes), self.K))
-        
-        # PAS MEGA ELEGANT...
 
-        for k in range(self.K):
-            var = self.sigma2[k]
+        for j in range(self.K):
+            var = self.sigma2[j]
             for i in range(N):
                 xi = mat_cell_type[i]
                 for t in range(T):
-                    a = (-0.5*(xi[t]-self.mu[k,t])**2)/var[t, t]
+                    a = (-0.5*(xi[t]-self.mu[j,t])**2)/var[t, t]
                     if ~np.isnan(a):
                         if a == -np.inf:
-                            log_P_gauss[i, k] += -1e10
+                            log_P_gauss[i, j] += -1e10
                         else:
-                            log_P_gauss[i, k] += a
+                            log_P_gauss[i, j] += a
                             
         # MAP criterion to determine new labels
 
@@ -189,11 +182,11 @@ class hmrf():
              
     def run(self):
         list_param = [[self.mu, self.sigma2]]
-        for cpt in tqdm(range(self.max_it)):
+        for cpt in tqdm([i for i in range(self.max_it)]):
             self.update_labels()
             self.mu, self.sigma2 = self.update_parameters()
             list_param.append([self.mu, self.sigma2])
-        self.parameters = list_param
+        return list_param
         
 def categorical_vector(G, category):
     
