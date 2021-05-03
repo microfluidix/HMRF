@@ -137,6 +137,7 @@ class hmrf():
             nx.set_node_attributes(self.graph, {node:self.color_list[new_class[node]]}, 'color')
             nx.set_node_attributes(self.graph, {node:new_class[node]}, 'legend')
 
+
     def update_parameters(self):
 
         # List of cell types
@@ -186,7 +187,7 @@ class hmrf():
 
         return freq, sig
         
-             
+        
     def run(self):
         list_param = [[self.mu, self.sigma2]]
         for cpt in tqdm(range(self.max_it)):
@@ -194,15 +195,17 @@ class hmrf():
             self.mu, self.sigma2 = self.update_parameters()
             list_param.append([self.mu, self.sigma2])
         self.parameters = list_param
+
         
-def categorical_vector(G, category):
-    
-    cat = nx.get_node_attributes(G, category)
-    type_of_data = type(cat[0])
-    V = np.array(list(cat.items()), dtype=type_of_data)
-    a = map(int, V[:,0])
-    a = np.array(list(a))
-    ind = np.argsort(a)
-    Vect = V[:,1][ind]
-    
-    return Vect
+    @staticmethod
+    def categorical_vector(G, category):
+        
+        cat = nx.get_node_attributes(G, category)
+        type_of_data = type(cat[0])
+        V = np.array(list(cat.items()), dtype=type_of_data)
+        a = map(int, V[:,0])
+        a = np.array(list(a))
+        ind = np.argsort(a)
+        Vect = V[:,1][ind]
+        
+        return Vect
