@@ -12,7 +12,8 @@ def scatter_plot_2D(G,
                     alpha_line = 0.6,
                     dim_to_squeeze = 'z',
                     scatterpoint_size = 20,
-                    legend = False):
+                    legend = False,
+                    lims = None):
 
     # Get node positions
     pos = nx.get_node_attributes(G, 'pos')
@@ -90,4 +91,11 @@ def scatter_plot_2D(G,
 
     # No ticks
     ax.set_xticks([]) 
-    ax.set_yticks([]) 
+    ax.set_yticks([])
+
+    if lims:
+
+        xlims, ylims = lims
+
+        ax.set_xlim(xlims) 
+        ax.set_ylim(ylims) 

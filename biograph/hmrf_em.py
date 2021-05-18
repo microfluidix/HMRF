@@ -7,11 +7,6 @@ import matplotlib.pyplot as plt
 import pandas
 from collections import Counter
 
-import biograph
-from biograph import graphplot
-from biograph import hmrf_estimator
-from biograph import probability_field_hmrf_estimator
-
 class hmrf():
     
     """
@@ -31,7 +26,7 @@ class hmrf():
                  beta = 1,
                  max_it = 50,
                  KMeans = None):
-
+        
         cell_types = nx.get_node_attributes(G, 'cell_type')
         
         self.graph = G
@@ -46,23 +41,44 @@ class hmrf():
         self.color_list = [plt.cm.Set3(i) for i in range(self.K)]
         self.KMean = KMeans
         self.parameters = None
+   
         
-    
     def initiate_model(self):
-
-        # Fill the latent space
-
-        biograph = probability_field_hmrf_estimator.hmrf(self.graph, epochs = 1, gamma = self.beta, K = 6)
-        biograph.initiate_latent_probability_field()
         
-        latent_probability_field_properties = probability_field_hmrf_estimator.get_latent_probability_field_properties(biograph.graph, biograph.number_of_cell_types)
+        # Initiate latent field
         
-        G = biograph.graph
+        cell_type_dict = nx.get_node_attributes(self.graph, 'cell_type')
+
+        G = self.graph
+        
+        for node in tqdm(G.nodes):
+            
+            neighbour_cell_types = [cell_type_dict[n] for n in G.neighbors(node)]
+            neighbour_cell_types_counter = Counter(neighbour_cell_types)
+            
+            latent_probability_vector = np.zeros(self.number_of_cell_types)
+                    
+            for cell_type in neighbour_cell_types_counter.keys():
+                
+                latent_probability_vector[cell_type] = neighbour_cell_types_counter[cell_type]
+            
+            latent_probability_vector /= np.sum(latent_probability_vector)
+            
+            nx.set_node_attributes(G, {node:latent_probability_vector}, 'latent_probability_field')
+
+        self.graph = G
+        
+        latent_probability_field_properties = hmrf.get_latent_probability_field_properties(self.graph, self.number_of_cell_types)
+        
+        # Apply Kmeans clustering on this initial latent field
+        
+        G = self.graph
         n_rows, n_cols = latent_probability_field_properties.shape
         X = np.log(latent_probability_field_properties+1e-4).values.reshape(-1,n_cols)
         X = preprocessing.StandardScaler().fit_transform(X)
-
+        
         # We initialize the labels based on another tissue
+        
         if self.KMean:
             kmeans = self.KMean.predict(X)
         else:
@@ -72,23 +88,22 @@ class hmrf():
             nx.set_node_attributes(G, {node:kmeans.labels_[node]}, 'class')
             nx.set_node_attributes(G, {node:self.color_list[kmeans.labels_[node]]}, 'color')
             nx.set_node_attributes(G, {node:kmeans.labels_[node]}, 'legend')
-        
+            
         # graph actualization & initialisation of parameters
         self.graph = G
         self.mu, self.sigma2 = self.update_parameters()
 
-        
     def update_labels(self):
         
         # Important quantities
         cell_class_dict = nx.get_node_attributes(self.graph, 'class') # dict of cell labels
-        cell_type_list = categorical_vector(self.graph, 'cell_type') # list of cell types
+        cell_type_list = hmrf.categorical_vector(self.graph, 'cell_type') # list of cell types
 
-        N = len(cell_type_list) # Number of cells
-        T = len(np.unique(cell_type_list)) # Number of cell types
+        N = len(cell_type_list) # Number of cell
+        M = len(np.unique(cell_type_list)) # Number of cell types
 
         # Create matrix from cell type
-        mat_cell_type = np.zeros((N, T))
+        mat_cell_type = np.zeros((N, M))
         for i in range(N):
             mat_cell_type[i, cell_type_list[i]] = 1
         
@@ -103,8 +118,8 @@ class hmrf():
 
             for cell_class in neighbour_cell_class_counter.keys():
 
-                for k in range(self.K):
-                    log_P_neigh[node, k] += self.beta*int(k == cell_class)*neighbour_cell_class_counter[cell_class]
+                for j in range(self.K):
+                    log_P_neigh[node, j] += self.beta*int(j == cell_class)*neighbour_cell_class_counter[cell_class]
                     
         # Emission log-probability
 
@@ -112,12 +127,22 @@ class hmrf():
         
         # PAS MEGA ELEGANT...
 
-        for k in range(self.K):
-            var = self.sigma2[k]
+        for j in range(self.K):
+            var = self.sigma2[j]
+            
             for i in range(N):
                 xi = mat_cell_type[i]
-                for t in range(T):
-                    a = (-0.5*(xi[t]-self.mu[k,t])**2)/var[t, t]
+                
+                for m in range(M):
+                    
+                    a = (-0.5*(xi[m]-self.mu[j,m])**2)
+                
+                    if a != 0:
+                        if var[m,m] == 0:
+                            a = -np.inf
+                        else: 
+                            a /= var[m,m]
+                        
                     if ~np.isnan(a):
                         if a == -np.inf:
                             log_P_gauss[i, k] += -1e10
@@ -141,21 +166,21 @@ class hmrf():
     def update_parameters(self):
 
         # List of cell types
-        cell_type_list = categorical_vector(self.graph, 'cell_type')
+        cell_type_list = hmrf.categorical_vector(self.graph, 'cell_type')
 
         # Number of cells
         N = len(cell_type_list)
 
         # Number of cell types
-        T = len(np.unique(cell_type_list))
+        M = len(np.unique(cell_type_list))
 
         # Create matrix from cell type
-        mat_cell_type = np.zeros((N, T))
+        mat_cell_type = np.zeros((N, M))
         for i in range(N):
             mat_cell_type[i, cell_type_list[i]] = 1
 
         # List of labels
-        cell_class_list = categorical_vector(self.graph, 'class')
+        cell_class_list = hmrf.categorical_vector(self.graph, 'class')
 
         # Number of cell labels
         classes, card_classes = np.unique(cell_class_list, return_counts=True)
@@ -166,10 +191,10 @@ class hmrf():
         card_classes = card_classes2
 
         # Count frequencies of cell types in each latent class
-        freq = np.zeros((self.K, T))
+        freq = np.zeros((self.K, M))
 
         # Variability inside class
-        sig = [np.eye(T) for j in range(self.K)]
+        sig = [np.eye(M) for j in range(self.K)]
 
         for j in range(self.K):
 
@@ -195,11 +220,12 @@ class hmrf():
             self.mu, self.sigma2 = self.update_parameters()
             list_param.append([self.mu, self.sigma2])
         self.parameters = list_param
-
         
+# ---------------------------------------------------------------------------------------------------------------  
+
     @staticmethod
     def categorical_vector(G, category):
-        
+    
         cat = nx.get_node_attributes(G, category)
         type_of_data = type(cat[0])
         V = np.array(list(cat.items()), dtype=type_of_data)
@@ -207,5 +233,22 @@ class hmrf():
         a = np.array(list(a))
         ind = np.argsort(a)
         Vect = V[:,1][ind]
-        
+
         return Vect
+
+    @staticmethod
+    def get_latent_probability_field_properties(G, number_of_cell_types):
+
+        resultframe = pandas.DataFrame()
+        i = 0
+
+        latent_probability_field = nx.get_node_attributes(G, 'latent_probability_field')
+
+        for node in sorted(G.nodes):
+
+            for k in range(number_of_cell_types):
+                resultframe.loc[i, k] = latent_probability_field[node][k]
+
+            i += 1
+
+        return resultframe.fillna(0)
