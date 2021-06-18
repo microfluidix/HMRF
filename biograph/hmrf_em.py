@@ -80,14 +80,15 @@ class hmrf():
         # We initialize the labels based on another tissue
         
         if self.KMean:
-            kmeans = self.KMean.predict(X)
+            labels = self.KMean.predict(X)
         else:
             kmeans = KMeans(n_clusters= self.K, random_state=0).fit(X)
+            labels = kmeans.predict(X)
         
         for node in sorted(G.nodes):
-            nx.set_node_attributes(G, {node:kmeans.labels_[node]}, 'class')
-            nx.set_node_attributes(G, {node:self.color_list[kmeans.labels_[node]]}, 'color')
-            nx.set_node_attributes(G, {node:kmeans.labels_[node]}, 'legend')
+            nx.set_node_attributes(G, {node:labels[node]}, 'class')
+            nx.set_node_attributes(G, {node:self.color_list[labels[node]]}, 'color')
+            nx.set_node_attributes(G, {node:labels[node]}, 'legend')
             
         # graph actualization & initialisation of parameters
         self.graph = G
@@ -145,9 +146,9 @@ class hmrf():
                         
                     if ~np.isnan(a):
                         if a == -np.inf:
-                            log_P_gauss[i, k] += -1e10
+                            log_P_gauss[i, j] += -1e10
                         else:
-                            log_P_gauss[i, k] += a
+                            log_P_gauss[i, j] += a
                             
         # MAP criterion to determine new labels
 
