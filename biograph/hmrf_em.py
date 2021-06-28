@@ -29,7 +29,7 @@ class hmrf():
         
         cell_types = nx.get_node_attributes(G, 'cell_type')
         
-        self.graph = G
+        self.graph = G.copy()
         self.K = K
         self.beta = beta
         self.max_it = max_it
