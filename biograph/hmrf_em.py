@@ -38,7 +38,7 @@ class hmrf():
         self.node_attributes = np.unique(np.array([list(self.graph.nodes[n].keys()) for n in self.graph.nodes()]).flatten())
         self.cell_types = np.unique([cell_types[node] for node in cell_types.keys()])
         self.number_of_cell_types = len(self.cell_types)
-        self.color_list = [plt.cm.Set3(i) for i in range(self.K)]
+        self.color_list = [plt.cm.Set2(i) for i in range(self.K)]
         self.KMean = KMeans
         self.parameters = None
    
