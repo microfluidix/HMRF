@@ -89,7 +89,7 @@ def scatter_plot_2D(G,
               markeredgewidth=1.5, 
               markeredgecolor= edge_color,
               linestyle='', 
-              ms=scatterpoint_size, 
+              ms=scatterpoint_size,
               label=name)
 
             ax.legend()

@@ -5,20 +5,19 @@ import matplotlib as mpl
 import pandas
 
 def scatter_plot_2D(G,
-                    include_color:bool = False,
                     edge_color:str = 'k', 
-                    save:bool=False,
                     figsize:tuple = (8,8),
-                    alpha_line = 0.6,
                     dim_to_squeeze = 'z',
                     scatterpoint_size = 20,
-                    legend = False):
+                    legend = False,
+                    lims = None):
 
     # Get node positions
     pos = nx.get_node_attributes(G, 'pos')
 
-    # Define color range proportional to number of edges adjacent to a single node
     colors = nx.get_node_attributes(G, 'color')
+
+    assert colors != {}
 
     if legend:
 
@@ -34,14 +33,38 @@ def scatter_plot_2D(G,
     s = []
     nodelegend = []
 
-    for key, value in pos.items():
-        x.append(value[1])
-        y.append(value[2])
-        s.append(scatterpoint_size)
-        nodeColor.append(colors[key])
+    if dim_to_squeeze == 'z':
 
-        if legend:
-            nodelegend.append(legend[key])
+        for key, value in pos.items():
+            x.append(value[1])
+            y.append(value[2])
+            s.append(scatterpoint_size)
+            nodeColor.append(colors[key])
+
+            if legend:
+                nodelegend.append(legend[key])
+
+    elif dim_to_squeeze == 'x':
+
+        for key, value in pos.items():
+            x.append(value[0])
+            y.append(value[2])
+            s.append(scatterpoint_size)
+            nodeColor.append(colors[key])
+
+            if legend:
+                nodelegend.append(legend[key])
+
+    else:
+
+        for key, value in pos.items():
+            x.append(value[0])
+            y.append(value[1])
+            s.append(scatterpoint_size)
+            nodeColor.append(colors[key])
+
+            if legend:
+                nodelegend.append(legend[key])
 
     df = pandas.DataFrame()
     df['x'] = x
@@ -64,9 +87,9 @@ def scatter_plot_2D(G,
               marker='o', 
               c=nodeColor,
               markeredgewidth=1.5, 
-              markeredgecolor= 'k',
+              markeredgecolor= edge_color,
               linestyle='', 
-              ms=scatterpoint_size, 
+              ms=scatterpoint_size,
               label=name)
 
             ax.legend()
@@ -77,7 +100,7 @@ def scatter_plot_2D(G,
               marker='o', 
               c=nodeColor,
               markeredgewidth=1.5, 
-              markeredgecolor= 'k',
+              markeredgecolor= edge_color,
               linestyle='', 
               ms=scatterpoint_size)
 
@@ -90,4 +113,11 @@ def scatter_plot_2D(G,
 
     # No ticks
     ax.set_xticks([]) 
-    ax.set_yticks([]) 
+    ax.set_yticks([])
+
+    if lims:
+
+        xlims, ylims = lims
+
+        ax.set_xlim(xlims) 
+        ax.set_ylim(ylims) 

@@ -39,7 +39,7 @@ class hmrf():
         self.K = K # number of finals regions in the tissue
         self.beta = beta # strength of region couplings
         self.max_it = max_it # number of iterations of the algorithm
-        self.KMean = KMeans # Kmeans clustering to initiate the latent field of cell classes
+        self.KMeans = KMeans # Kmeans clustering to initiate the latent field of cell classes
         
         # Parameters of the gaussian influence of cell phenotypes (= cell types)
         self.mu = [] # fraction of cells of each type per region
@@ -48,9 +48,9 @@ class hmrf():
         
         # Number of cell phenotypes
         cell_type_dict = nx.get_node_attributes(G, 'cell_type') # dictionary of all cell types
-        self.number_of_cell_types = len(cell_type_dict) # number of cell types
+        self.number_of_cell_types = len(np.unique([cell_type_dict[node] for node in cell_type_dict.keys()])) # number of cell types
         
-        self.color_list = [plt.cm.Set2(i) for i in range(self.K)] # colors of each node 
+        self.color_list = [plt.cm.viridis(i/(self.K-1)) for i in range(self.K)] # colors of each node 
         
     def initiate_model(self):
         # Initialization of the latent field (cell classes)
@@ -93,7 +93,7 @@ class hmrf():
             X = preprocessing.StandardScaler().fit_transform(X)
         
             kmeans = KMeans(n_clusters= self.K, random_state=0).fit(X)
-            self.KMean = kmeans # Save this initialization
+            self.KMeans = kmeans # Save this initialization
             labels = kmeans.predict(X)
         
         # Save this initial clustering (kmeans) as the first configuration of the latent field (of cell classes) 
@@ -211,7 +211,7 @@ class hmrf():
             sig_j /= card_classes[j]
             sig[j] *= sig_j
 
-        return freq, sig
+        return mu, sig
         
         
     def run(self): # run the loop self.max_it times
@@ -249,16 +249,8 @@ class hmrf():
         #        number_of_cell_types (int)
         # return: a pandas.DataFrame containing the composition of nearest neighbors phenotypes (in percent) for each node
 
-        resultframe = pandas.DataFrame()
-        i = 0
+        compo = hmrf.categorical_vector(G, 'compo_nn')
 
-        compo_nn = nx.get_node_attributes(G, 'compo_nn')
-
-        for node in sorted(G.nodes):
-
-            for k in range(number_of_cell_types):
-                resultframe.loc[i, k] = compo_nn[node][k]
-
-            i += 1
+        resultframe = pandas.DataFrame(np.concatenate([L for L in compo]).reshape((len(compo),number_of_cell_types)))
 
         return resultframe.fillna(0)
