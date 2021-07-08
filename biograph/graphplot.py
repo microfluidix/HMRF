@@ -10,7 +10,8 @@ def scatter_plot_2D(G,
                     dim_to_squeeze = 'z',
                     scatterpoint_size = 20,
                     legend = False,
-                    lims = None):
+                    lims = None,
+                    markeredgewidth = 1):
 
     # Get node positions
     pos = nx.get_node_attributes(G, 'pos')
@@ -86,7 +87,7 @@ def scatter_plot_2D(G,
             ax.plot(group.x, group.y, 
               marker='o', 
               c=nodeColor,
-              markeredgewidth=1.5, 
+              markeredgewidth=markeredgewidth, 
               markeredgecolor= edge_color,
               linestyle='', 
               ms=scatterpoint_size,
@@ -99,7 +100,7 @@ def scatter_plot_2D(G,
             ax.plot(group.x, group.y, 
               marker='o', 
               c=nodeColor,
-              markeredgewidth=1.5, 
+              markeredgewidth=markeredgewidth, 
               markeredgecolor= edge_color,
               linestyle='', 
               ms=scatterpoint_size)

@@ -34,12 +34,21 @@ class hmrf():
                  max_it = 50,
                  KMeans = None):
         
-        # Inputs
-        self.graph = G.copy() # orginal graph
-        self.K = K # number of finals regions in the tissue
-        self.beta = beta # strength of region couplings
-        self.max_it = max_it # number of iterations of the algorithm
-        self.KMeans = KMeans # Kmeans clustering to initiate the latent field of cell classes
+        cell_types = nx.get_node_attributes(G, 'cell_type')
+        
+        self.graph = G.copy()
+        self.K = K
+        self.beta = beta
+        self.max_it = max_it
+        self.mu = []
+        self.sigma2 = []
+        self.node_attributes = np.unique(np.array([list(self.graph.nodes[n].keys()) for n in self.graph.nodes()]).flatten())
+        self.cell_types = np.unique([cell_types[node] for node in cell_types.keys()])
+        self.number_of_cell_types = len(self.cell_types)
+        self.color_list = [plt.cm.Set2(i) for i in range(self.K)]
+        self.KMean = KMeans
+        self.parameters = None
+   
         
         # Parameters of the gaussian influence of cell phenotypes (= cell types)
         self.mu = [] # fraction of cells of each type per region
