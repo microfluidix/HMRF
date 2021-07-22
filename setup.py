@@ -20,9 +20,8 @@ setup(
         "scikit-image",
         "matplotlib",
         "sklearn",
-        "tox"
+        "tox",
     ],
     python_requires=">=3.8",
-    packages = ['biograph', 
-                'biograph.graphprops']
+    packages=["biograph", "biograph.graphprops"],
 )
