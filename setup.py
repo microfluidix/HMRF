@@ -19,7 +19,8 @@ setup(
         "pip",
         "scikit-image",
         "matplotlib",
-        "sklearn"
+        "sklearn",
+        "tox"
     ],
     python_requires=">=3.8",
     packages = ['biograph', 
