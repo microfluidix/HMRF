@@ -14,6 +14,7 @@ def scatter_plot_2D(
     legend=False,
     lims=None,
     markeredgewidth=1,
+    legend_fontsize = 12,
 ):
 
     # Get node positions
@@ -99,7 +100,7 @@ def scatter_plot_2D(
                 label=name,
             )
 
-            ax.legend()
+            ax.legend(legend_fontsize)
 
         else:
 
@@ -113,6 +114,8 @@ def scatter_plot_2D(
                 linestyle="",
                 ms=scatterpoint_size,
             )
+
+            ax.legend(legend_fontsize)
 
     # Scatter plot
     # sc = ax.scatter(x, y, c=nodeColor, s=s, edgecolors='k', alpha=1)
