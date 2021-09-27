@@ -30,14 +30,24 @@ class hmrf:
 
     def __init__(self, G, K=5, beta=1, max_it=50, KMeans=None):
 
-        # Inputs
-        self.graph = G.copy()  # orginal graph
-        self.K = K  # number of finals regions in the tissue
-        self.beta = beta  # strength of region couplings
-        self.max_it = max_it  # number of iterations of the algorithm
-        self.KMeans = (
-            KMeans  # Kmeans clustering to initiate the latent field of cell classes
+        cell_types = nx.get_node_attributes(G, "cell_type")
+
+        self.graph = G.copy()
+        self.K = K
+        self.beta = beta
+        self.max_it = max_it
+        self.mu = []
+        self.sigma2 = []
+        self.node_attributes = np.unique(
+            np.array(
+                [list(self.graph.nodes[n].keys()) for n in self.graph.nodes()]
+            ).flatten()
         )
+        self.cell_types = np.unique([cell_types[node] for node in cell_types.keys()])
+        self.number_of_cell_types = len(self.cell_types)
+        self.color_list = [plt.cm.Set2(i) for i in range(self.K)]
+        self.KMean = KMeans
+        self.parameters = None
 
         # Parameters of the gaussian influence of cell phenotypes (= cell types)
         self.mu = []  # fraction of cells of each type per region
@@ -124,9 +134,9 @@ class hmrf:
     def update_labels(self):  # update latent field of cell classes
 
         # Important quantities
-        cell_class_dict = nx.get_node_attributes(
+        cell_class_list = hmrf.categorical_vector(
             self.graph, "class"
-        )  # dict of cell labels
+        )  # list of cell classes
         cell_type_list = hmrf.categorical_vector(
             self.graph, "cell_type"
         )  # list of cell types
@@ -136,52 +146,45 @@ class hmrf:
 
         # Create matrix from cell type
         mat_cell_type = np.zeros((N, M))
-        for i in range(N):
-            mat_cell_type[i, cell_type_list[i]] = 1
+        
+        list_index = np.array([i for i in range(N)])
+        mat_cell_type[list_index, cell_type_list] = 1
 
         # Influence of neighbors labels (compute log probability)
-        log_P_neigh = np.zeros((len(self.graph.nodes), self.K))
-
-        for node in self.graph.nodes:
-
-            neighbour_cell_class = [
-                cell_class_dict[n] for n in self.graph.neighbors(node)
-            ]
-            neighbour_cell_class_counter = Counter(neighbour_cell_class)
-
-            for cell_class in neighbour_cell_class_counter.keys():
-
-                for j in range(self.K):
-                    log_P_neigh[node, j] += (
-                        self.beta
-                        * int(j == cell_class)
-                        * neighbour_cell_class_counter[cell_class]
-                    )
+        log_P_neigh = np.zeros((N, self.K))
+        
+        for node in range(N):
+            a, b = np.unique([cell_class_list[n] for n in self.graph.neighbors(node)], return_counts = True)
+            log_P_neigh[node, a.astype(int)] = b
+        
+        log_P_neigh *= self.beta
 
         # Log-probability of emitting a specific latent label knowing cell's phenotype
-        log_P_gauss = np.zeros((len(self.graph.nodes), self.K))
+        
+        Mat = np.ones((N, self.K, M))
+
+        for i in range(N):
+            Mat[i, :, :] *= -0.5*(mat_cell_type[i] - self.mu)**2
+
+        list_index = np.array([i for i in range(N)])
 
         for j in range(self.K):
             var = self.sigma2[j]
+            
+            v = np.copy(np.diag(var))
+            l = np.where(v == 0)[0]
+            v[v== 0] = 1
 
-            for i in range(N):
-                xi = mat_cell_type[i]
+            Ar = Mat[:,j,:][:, l]
+            Ar[Ar != 0] = np.nan
+            Mat[:,j,:][:, l] = Ar
 
-                for m in range(M):
+            Mat[:, j, :] /= v
 
-                    a = -0.5 * (xi[m] - self.mu[j, m]) ** 2
+        Mat[np.isnan(Mat)] = -1e10
 
-                    if a != 0:
-                        if var[m, m] == 0:
-                            a = -np.inf
-                        else:
-                            a /= var[m, m]
-
-                    if ~np.isnan(a):
-                        if a == -np.inf:
-                            log_P_gauss[i, j] += -1e10
-                        else:
-                            log_P_gauss[i, j] += a
+        log_P_gauss = np.sum(Mat, axis = 2)
+        
 
         # MAP criterion to determine new labels
         sum_prob = log_P_gauss + log_P_neigh
