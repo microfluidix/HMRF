@@ -7,7 +7,6 @@ import matplotlib.pyplot as plt
 import pandas
 from collections import Counter
 
-
 class hmrf:
 
     """
