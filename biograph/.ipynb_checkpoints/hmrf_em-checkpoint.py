@@ -146,45 +146,47 @@ class hmrf:
 
         # Create matrix from cell type
         mat_cell_type = np.zeros((N, M))
-        
+
         list_index = np.array([i for i in range(N)])
         mat_cell_type[list_index, cell_type_list] = 1
 
         # Influence of neighbors labels (compute log probability)
         log_P_neigh = np.zeros((N, self.K))
-        
+
         for node in range(N):
-            a, b = np.unique([cell_class_list[n] for n in self.graph.neighbors(node)], return_counts = True)
+            a, b = np.unique(
+                [cell_class_list[n] for n in self.graph.neighbors(node)],
+                return_counts=True,
+            )
             log_P_neigh[node, a.astype(int)] = b
-        
+
         log_P_neigh *= self.beta
 
         # Log-probability of emitting a specific latent label knowing cell's phenotype
-        
+
         Mat = np.ones((N, self.K, M))
 
         for i in range(N):
-            Mat[i, :, :] *= -0.5*(mat_cell_type[i] - self.mu)**2
+            Mat[i, :, :] *= -0.5 * (mat_cell_type[i] - self.mu) ** 2
 
         list_index = np.array([i for i in range(N)])
 
         for j in range(self.K):
             var = self.sigma2[j]
-            
+
             v = np.copy(np.diag(var))
             l = np.where(v == 0)[0]
-            v[v== 0] = 1
+            v[v == 0] = 1
 
-            Ar = Mat[:,j,:][:, l]
+            Ar = Mat[:, j, :][:, l]
             Ar[Ar != 0] = np.nan
-            Mat[:,j,:][:, l] = Ar
+            Mat[:, j, :][:, l] = Ar
 
             Mat[:, j, :] /= v
 
         Mat[np.isnan(Mat)] = -1e10
 
-        log_P_gauss = np.sum(Mat, axis = 2)
-        
+        log_P_gauss = np.sum(Mat, axis=2)
 
         # MAP criterion to determine new labels
         sum_prob = log_P_gauss + log_P_neigh

@@ -21,6 +21,7 @@ setup(
         "matplotlib",
         "sklearn",
         "tox",
+        "pytest",
     ],
     python_requires=">=3.8",
     packages=["biograph", "biograph.graphprops"],

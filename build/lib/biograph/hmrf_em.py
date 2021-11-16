@@ -13,40 +13,24 @@ class hmrf:
     """
     Create an instance of the hmrf class.
 
-    Main idea:
-    - take as an input a network of cells (nodes) having an attribute
-            "cell_type" corresponding to the cell's phenotypes
-    - compute a new attribute for each cell (node) called cell_class -- being
-            a latent label in the hidden markov random field framework --
-            allowing to determine regions (or patterns) in the tissue.
-
-    Parameters
-    ----------
-     - G (networkX graph object): Network to regionalize. Has at least
-            cell_type as an attribute. cell_type is an integer between
-            0 and M-1 where M is the number of cell types in the graph.
+    Parameters:
+     - G (networkX graph object): Network to regionalize. Has at least cell_type as an attribute.
      - K (int): the number of final regions in the tissue
-     - beta (float): the strength of the region coupling. A small value
-            leads to less homogeneous regions.
+     - beta (float): the strength of the region coupling. A small value leads to less homogeneous regions.
      - max_it (int): number of iterations
-     - Kmeans (sklearn.cluster.KMeans object, optional): Kmeans to impose
-            an initial latent configuration of cell classes regions
+     - Kmeans (sklearn.cluster.KMeans object, optional): Kmeans to impose an initial latent configuration of cell classes regions
 
-    Returns
-    -------
-    - hmrf (hmrf object): an instance of the hmrf class.
+    Main idea:
+    - take as an input a network of cells (nodes) having an attribute "cell_type" corresponding to the cell's phenotypes
+    - compute a new attribute for each cell (node) called cell_class -- being a latent label in the hidden markov random field framework --
+      allowing to determine regions (or patterns) in the tissue.
+
+    The default legend of the returned graph is the cell class.
     """
 
     def __init__(self, G, K=5, beta=1, max_it=50, KMeans=None):
 
         cell_types = nx.get_node_attributes(G, "cell_type")
-
-        # check that cell_types are integers
-        for type in list(cell_types[key] for key in cell_types.keys()):
-            assert isinstance(type, int)
-
-        # check that cell_types are between 0 and M-1
-        assert max(cell_types.values()) == len(np.unique(cell_types.values())) - 1
 
         self.graph = G.copy()
         self.K = K
@@ -63,6 +47,7 @@ class hmrf:
         self.number_of_cell_types = len(self.cell_types)
         self.color_list = [plt.cm.Set2(i) for i in range(self.K)]
         self.KMean = KMeans
+        self.parameters = None
 
         # Parameters of the gaussian influence of cell phenotypes (= cell types)
         self.mu = []  # fraction of cells of each type per region
@@ -161,47 +146,45 @@ class hmrf:
 
         # Create matrix from cell type
         mat_cell_type = np.zeros((N, M))
-
+        
         list_index = np.array([i for i in range(N)])
         mat_cell_type[list_index, cell_type_list] = 1
 
         # Influence of neighbors labels (compute log probability)
         log_P_neigh = np.zeros((N, self.K))
-
+        
         for node in range(N):
-            a, b = np.unique(
-                [cell_class_list[n] for n in self.graph.neighbors(node)],
-                return_counts=True,
-            )
+            a, b = np.unique([cell_class_list[n] for n in self.graph.neighbors(node)], return_counts = True)
             log_P_neigh[node, a.astype(int)] = b
-
+        
         log_P_neigh *= self.beta
 
         # Log-probability of emitting a specific latent label knowing cell's phenotype
-
+        
         Mat = np.ones((N, self.K, M))
 
         for i in range(N):
-            Mat[i, :, :] *= -0.5 * (mat_cell_type[i] - self.mu) ** 2
+            Mat[i, :, :] *= -0.5*(mat_cell_type[i] - self.mu)**2
 
         list_index = np.array([i for i in range(N)])
 
         for j in range(self.K):
             var = self.sigma2[j]
-
+            
             v = np.copy(np.diag(var))
             l = np.where(v == 0)[0]
-            v[v == 0] = 1
+            v[v== 0] = 1
 
-            Ar = Mat[:, j, :][:, l]
+            Ar = Mat[:,j,:][:, l]
             Ar[Ar != 0] = np.nan
-            Mat[:, j, :][:, l] = Ar
+            Mat[:,j,:][:, l] = Ar
 
             Mat[:, j, :] /= v
 
         Mat[np.isnan(Mat)] = -1e10
 
-        log_P_gauss = np.sum(Mat, axis=2)
+        log_P_gauss = np.sum(Mat, axis = 2)
+        
 
         # MAP criterion to determine new labels
         sum_prob = log_P_gauss + log_P_neigh

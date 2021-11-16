@@ -14,7 +14,7 @@ def scatter_plot_2D(
     legend=False,
     lims=None,
     markeredgewidth=1,
-    legend_fontsize=12,
+    legend_fontsize = 12,
 ):
 
     # Get node positions
@@ -83,7 +83,7 @@ def scatter_plot_2D(
     groups = df.groupby("nodeColor")
 
     if legend:
-
+        
         for nodeColor, group in groups:
 
             name = group.legend.unique()[0]
@@ -99,8 +99,8 @@ def scatter_plot_2D(
                 ms=scatterpoint_size,
                 label=name,
             )
-
-        ax.legend(fontsize=legend_fontsize)
+        
+        ax.legend(fontsize = legend_fontsize)
 
     else:
 
