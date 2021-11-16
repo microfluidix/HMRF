@@ -3,7 +3,7 @@
 from setuptools import setup
 
 setup(
-    name="biograph",
+    name="salad",
     version="0.1",
     description="Extracting single-cell data from segmented images",
     author="Gustave Ronteix, Valentin Bonnet",
@@ -24,5 +24,5 @@ setup(
         "pytest",
     ],
     python_requires=">=3.8",
-    packages=["biograph", "biograph.graphprops"],
+    packages=["salad", "salad.graphprops"],
 )
