@@ -82,9 +82,9 @@ def scatter_plot_2D(
 
     groups = df.groupby("nodeColor")
 
-    for nodeColor, group in groups:
-
-        if legend:
+    if legend:
+        
+        for nodeColor, group in groups:
 
             name = group.legend.unique()[0]
 
@@ -99,10 +99,12 @@ def scatter_plot_2D(
                 ms=scatterpoint_size,
                 label=name,
             )
+        
+        ax.legend(fontsize = legend_fontsize)
 
-            ax.legend(legend_fontsize)
+    else:
 
-        else:
+        for nodeColor, group in groups:
 
             ax.plot(
                 group.x,
@@ -114,8 +116,6 @@ def scatter_plot_2D(
                 linestyle="",
                 ms=scatterpoint_size,
             )
-
-            ax.legend(legend_fontsize)
 
     # Scatter plot
     # sc = ax.scatter(x, y, c=nodeColor, s=s, edgecolors='k', alpha=1)
