@@ -6,9 +6,9 @@ Starting from a networkX graph where each cell possesses a categorial feature `c
 
 ## Installation
 
-If it's not already done, install [Anaconda](https://www.anaconda.com/). Then you should install **`Salad`** in a local environment. For the moment, only installation via the repository is possible. In the command prompt enter:
+If it's not already done, install [Anaconda](https://www.anaconda.com/). Then you should install `Salad` in a local environment. For the moment, only installation via the repository is possible. In the command prompt enter:
 
-`git clone https://gitlab.pasteur.fr/gronteix1/biograph.git`
+`git clone https://github.com/microfluidix/HMRF`
 
 This should download the project. Then install the required packages. In the terminal, navigate to the package directory and type:
 
